@@ -32,7 +32,13 @@ app.post('/api/subscribe', [
     body('email')
         .isEmail()
         .withMessage('Please enter a valid email address')
-        .normalizeEmail()
+        .normalizeEmail({
+            gmail_remove_dots: false,  // Don't remove dots from Gmail addresses
+            gmail_remove_subaddress: false,  // Don't remove +subaddress
+            outlookdotcom_remove_subaddress: false,
+            yahoo_remove_subaddress: false,
+            icloud_remove_subaddress: false
+        })
 ], async (req, res) => {
     try {
         // Check for validation errors
@@ -46,11 +52,17 @@ app.post('/api/subscribe', [
         }
 
         const { email } = req.body;
-
+        
         // Check if email already exists
         try {
             const existingEmails = await fs.readFile(emailsFile, 'utf8');
-            if (existingEmails.includes(email)) {
+            const emailLines = existingEmails.split('\n').filter(line => line.trim());
+            const emailExists = emailLines.some(line => {
+                const emailPart = line.split(' - ')[0];
+                return emailPart === email;
+            });
+            
+            if (emailExists) {
                 return res.status(409).json({
                     success: false,
                     message: 'Email already subscribed'
@@ -64,11 +76,11 @@ app.post('/api/subscribe', [
         // Append email to file with timestamp
         const timestamp = new Date().toISOString();
         const emailEntry = `${email} - ${timestamp}\n`;
-
+        
         await fs.appendFile(emailsFile, emailEntry);
-
+        
         console.log(`New email subscription: ${email}`);
-
+        
         res.json({
             success: true,
             message: 'Thank you for subscribing! We\'ll keep you updated.'
