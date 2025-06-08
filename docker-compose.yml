@@ -6,7 +6,7 @@ services:
     container_name: mun-landing
     restart: unless-stopped
     ports:
-      - "13000:3000"  # Map to different port to avoid conflicts with main app
+      - "127.0.0.1:13000:3000"  # Map to different port to avoid conflicts with main app
     volumes:
       - ./data:/app/data  # Persist email data
     environment:
